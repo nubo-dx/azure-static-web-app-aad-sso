@@ -1,0 +1,57 @@
+{
+    "routes": [
+        {
+            "route": "/",
+            "allowedRoles": [
+                "user",
+                "administrator"
+            ]
+        },
+        {
+            "route": "/nested/*",
+            "allowedRoles": [
+                "user",
+                "administrator"
+            ]
+        },
+        {
+            "route": "/admin/*",
+            "allowedRoles": [
+                "administrator"
+            ]
+        },
+        {
+            "route": "/forbidden/*",
+            "allowedRoles": [
+                "fakerole"
+            ]
+        }
+    ],
+    "platform": {
+        "apiRuntime": "node:16"
+    },
+    "auth": {
+        "rolesSource": "/api/roles",
+        "identityProviders": {
+            "azureActiveDirectory": {
+                "userDetailsClaim": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name",
+                "registration": {
+                    "openIdIssuer": "https://login.microsoftonline.com/@#{TenantId}#@",
+                    "clientIdSettingName": "AAD_CLIENT_ID",
+                    "clientSecretSettingName": "AAD_CLIENT_SECRET"
+                },
+                "login": {
+                    "loginParameters": [
+                        "resource=https://graph.microsoft.com"
+                    ]
+                }
+            }
+        }
+    },
+    "responseOverrides": {
+        "401": {
+            "statusCode": 302,
+            "redirect": "/.auth/login/aad"
+        }
+    }
+}

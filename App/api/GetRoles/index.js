@@ -10,9 +10,10 @@ const roleGroupMappings = {
 module.exports = async function (context, req) {
   const user = req.body || {};
   const roles = [];
+  const groupsIdsOfUser = await getUserGroups(user.accessToken);
 
   for (const [role, groupId] of Object.entries(roleGroupMappings)) {
-    if (await isUserInGroup(groupId, user.accessToken)) {
+    if (groupsIdsOfUser.includes(groupId)) {
       roles.push(role);
     }
   }
@@ -22,9 +23,8 @@ module.exports = async function (context, req) {
   });
 };
 
-async function isUserInGroup(groupId, bearerToken) {
+async function getUserGroups(bearerToken) {
   const url = new URL("https://graph.microsoft.com/v1.0/me/memberOf");
-  url.searchParams.append("$filter", `id eq '${groupId}'`);
   const response = await fetch(url, {
     method: "GET",
     headers: {
@@ -33,12 +33,10 @@ async function isUserInGroup(groupId, bearerToken) {
   });
 
   if (response.status !== 200) {
-    return false;
+    return [];
   }
 
   const graphResponse = await response.json();
-  const matchingGroups = graphResponse.value.filter(
-    (group) => group.id === groupId
-  );
-  return matchingGroups.length > 0;
+  const ids = graphResponse.value.map((item) => item.id);
+  return ids;
 }
